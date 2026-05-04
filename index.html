@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informační systém dopravy</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #e74c3c;
+            --bg: #f8f9fa;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Navigační panel */
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .nav-group { padding: 10px 0; }
+        
+        .nav-label {
+            padding: 10px 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            color: #ecf0f1;
+            transition: 0.2s;
+            display: block;
+            text-decoration: none;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--accent);
+            font-weight: bold;
+        }
+
+        /* Hlavní plocha */
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+            width: 100%;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        h1 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        h2 { color: var(--primary); margin-top: 30px; }
+
+        /* Karty a seznamy */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .route-card {
+            background: white;
+            border-left: 5px solid var(--accent);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .route-header { font-weight: bold; font-size: 1.2rem; margin-bottom: 5px; color: var(--accent); }
+        .route-stops { line-height: 1.6; color: #555; }
+
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .v-badge {
+            background: #f1f1f1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">DOPRAVNÍ SYSTÉM</div>
+    
+    <div class="nav-group">
+        <a href="#" class="nav-item active" onclick="showPage('home', this)">🏠 Domů</a>
+    </div>
+
+    <div class="nav-label">Vozový park</div>
+    <div class="nav-group">
+        <a href="#" class="nav-item" onclick="showPage('sor', this)">Autobusy SOR</a>
+        <a href="#" class="nav-item" onclick="showPage('iveco', this)">Iveco</a>
+        <a href="#" class="nav-item" onclick="showPage('irisbus', this)">Irisbus</a>
+        <a href="#" class="nav-item" onclick="showPage('karosa', this)">Karosa</a>
+        <a href="#" class="nav-item" onclick="showPage('trolejbusy', this)">Trolejbusy</a>
+        <a href="#" class="nav-item" onclick="showPage('skola', this)">Školní vozy</a>
+    </div>
+
+    <div class="nav-label">Provoz</div>
+    <div class="nav-group">
+        <a href="#" class="nav-item" onclick="showPage('linky', this)">🗺️ Seznam linek</a>
+    </div>
+</div>
+
+<div class="main-content">
+    
+    <div id="home" class="page active">
+        <h1>Vítejte v systému</h1>
+        <div class="card">
+            <p>Tento web obsahuje kompletní evidenci vozového parku a přehled linek.</p>
+            <p><strong>Statistiky:</strong><br>
+            • Celkem vozů: 59<br>
+            • Celkem linek: 4</p>
+        </div>
+    </div>
+
+    <div id="linky" class="page">
+        <h1>Seznam linek</h1>
+        
+        <div class="route-card">
+            <div class="route-header">Linka 1 (Trolejbus)</div>
+            <div class="route-stops">Základní škola, Zemědělská zóna, Náměstí 1. Máje, Náměstí Boženy Moravské, Depo Trolejbusů</div>
+        </div>
+
+        <div class="route-card">
+            <div class="route-header">Linka 2</div>
+            <div class="route-stops">Depo Trolejbusu, Nákupní středisko, Hlavní nádraží, Tesco, Depo Autobusu, Ústřední autobusové Nádraží</div>
+        </div>
+
+        <div class="route-card">
+            <div class="route-header">Linka 12</div>
+            <div class="route-stops">Depo autobusu, ÚAN (Ústřední autobusové nádraží), Hospoda, Základní škola</div>
+        </div>
+
+        <div class="route-card">
+            <div class="route-header">Linka 13 (Expres)</div>
+            <div class="route-stops">ÚAN, Hlavní nádraží</div>
+        </div>
+    </div>
+
+    <div id="sor" class="page">
+        <h1>Autobusy SOR</h1>
+        <div class="card">
+            <h3>Model: SOR C12 (001 - 010)</h3>
+            <div class="fleet-grid" id="grid-sor"></div>
+        </div>
+    </div>
+
+    <div id="iveco" class="page">
+        <h1>Iveco</h1>
+        <div class="card">
+            <h3>Model: Crossway 12 LE (011 - 020)</h3>
+            <div class="fleet-grid" id="grid-iveco"></div>
+        </div>
+    </div>
+
+    <div id="irisbus" class="page">
+        <h1>Irisbus</h1>
+        <div class="card">
+            <h3>Model: Axer (021 - 025)</h3>
+            <div class="fleet-grid" id="grid-irisbus"></div>
+        </div>
+    </div>
+
+    <div id="karosa" class="page">
+        <h1>Karosa</h1>
+        <div class="card">
+            <h3>Model: ŠM 16.5 (026 - 035)</h3>
+            <div class="fleet-grid" id="grid-karosa"></div>
+        </div>
+    </div>
+
+    <div id="trolejbusy" class="page">
+        <h1>Trolejbusy</h1>
+        <div class="card">
+            <h3>SOR TNB 12 (050 - 059)</h3>
+            <div class="fleet-grid" id="grid-tnb"></div>
+        </div>
+        <div class="card">
+            <h3>SOR TNS 12 (060 - 065)</h3>
+            <div class="fleet-grid" id="grid-tns"></div>
+        </div>
+        <div class="card">
+            <h3>Škoda 26 Tr (066 - 070)</h3>
+            <div class="fleet-grid" id="grid-skoda"></div>
+        </div>
+    </div>
+
+    <div id="skola" class="page">
+        <h1>Škola</h1>
+        <div class="card">
+            <h3>Školní vozy SOR C12 (9917 - 9919)</h3>
+            <div class="fleet-grid" id="grid-skola"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Funkce pro přepínání stránek
+    function showPage(pageId, element) {
+        // Skrýt všechny stránky
+        const pages = document.querySelectorAll('.page');
+        pages.forEach(p => p.classList.remove('active'));
+
+        // Zobrazit vybranou stránku
+        document.getElementById(pageId).classList.add('active');
+
+        // Nastavit aktivní tlačítko v menu
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+    }
+
+    // Pomocná funkce pro vygenerování čísel vozů
+    function generateNumbers(containerId, start, end) {
+        const container = document.getElementById(containerId);
+        for (let i = start; i <= end; i++) {
+            const badge = document.createElement('div');
+            badge.className = 'v-badge';
+            badge.innerText = i < 1000 ? i.toString().padStart(3, '0') : i;
+            container.appendChild(badge);
+        }
+    }
+
+    // Spustit po načtení
+    window.onload = function() {
+        generateNumbers('grid-sor', 1, 10);
+        generateNumbers('grid-iveco', 11, 20);
+        generateNumbers('grid-irisbus', 21, 25);
+        generateNumbers('grid-karosa', 26, 35);
+        generateNumbers('grid-tnb', 50, 59);
+        generateNumbers('grid-tns', 60, 65);
+        generateNumbers('grid-skoda', 66, 70);
+        generateNumbers('grid-skola', 9917, 9919);
+    };
+</script>
+
+</body>
+</html>
