@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KOKOTICE SMART CITY 2026</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --primary: #2c3e50;
+            --l1: #e74c3c; --l2: #3498db; --l333: #27ae60; --trn: #2c3e50;
+        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Segoe UI', Roboto, sans-serif; background: #fff; overflow: hidden; touch-action: none; }
+        #viewport { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+        #map-content { position: absolute; width: 10000px; height: 10000px; background-color: #fff; background-image: radial-gradient(#e0e0e0 2px, transparent 2px); background-size: 80px 80px; transform-origin: 0 0; }
+        
+        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .route { fill: none; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; transition: 0.3s; }
+        .trn-line { stroke-dasharray: 20, 15; stroke-width: 6; opacity: 0.6; }
+        
+        .stop { position: absolute; width: 22px; height: 22px; background: #fff; border: 4px solid var(--primary); border-radius: 50%; transform: translate(-50%, -50%); z-index: 20; cursor: pointer; transition: 0.2s; }
+        .stop:hover { transform: translate(-50%, -50%) scale(1.3); background: #f1c40f; }
+        .stop.hub { width: 35px; height: 35px; border-width: 6px; }
+        
+        .label { position: absolute; font-size: 14px; font-weight: 600; color: #2c3e50; background: rgba(255,255,255,0.9); padding: 2px 8px; border-radius: 15px; white-space: nowrap; transform: translate(-50%, 28px); pointer-events: none; z-index: 21; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* GUI */
+        .top-bar { position: absolute; top: 20px; left: 20px; background: #fff; border: 1px solid #ddd; padding: 15px 25px; border-radius: 40px; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 20px; z-index: 1000; }
+        #card { position: absolute; bottom: -100%; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px; background: #fff; border-radius: 30px 30px 0 0; padding: 30px; box-sizing: border-box; transition: 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); pointer-events: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); z-index: 2000; }
+        #card.active { bottom: 0; }
+        
+        .controls { position: absolute; right: 20px; bottom: 30px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+        .btn { width: 55px; height: 55px; background: #fff; color: #2c3e50; border-radius: 50%; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn.active { background: #2c3e50; color: #fff; }
+        
+        .line-tag { display: inline-block; padding: 4px 12px; border-radius: 20px; color: #fff; font-size: 12px; margin-right: 5px; font-weight: bold; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="viewport">
+    <div id="map-content">
+        <svg id="svg"></svg>
+        <div id="stops"></div>
+    </div>
+</div>
+
+<div class="top-bar">
+    <div style="font-weight: 800; color: var(--primary);">KOKOTICE <span style="color:#3498db">SMART MAP</span></div>
+    <input type="range" id="zoom" min="0.2" max="1.5" step="0.05" value="0.6" style="width:120px">
+</div>
+
+<div class="controls">
+    <div id="lock" class="btn" onclick="toggleLock()">🔓</div>
+    <div class="btn" onclick="recenter()">⌂</div>
+</div>
+
+<div id="card">
+    <div onclick="closeInfo()" style="float:right; font-size:30px; cursor:pointer; color:#999">×</div>
+    <h2 id="st-n" style="margin:0 0 10px 0; color: var(--primary);">Zastávka</h2>
+    <div id="st-b" style="margin-bottom: 20px;"></div>
+    <div id="st-h" style="line-height: 1.6; color: #555; font-size: 15px;"></div>
+    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; font-size: 13px; color: #2ecc71;">
+        <span class="status-dot"></span> Spoj jede včas dle jízdního řádu.
+    </div>
+</div>
+
+<script>
+const DATA = {
+    stops: [
+        { id: 'vzn', n: 'Centrální depo', x: 5000, y: 5000, l: ['1', 'TRN'], h: 'Moderní zázemí pro ekologickou flotilu městských autobusů. K dispozici je zde i dobíjecí stanice pro elektrobusy.' },
+        { id: 'skl', n: 'Vzdělávací areál', x: 5300, y: 5000, l: ['1'], h: 'Zastávka přímo u kampusu základní školy a gymnázia. Lokalita je chráněna moderním kamerovým systémem pro bezpečnost dětí.' },
+        { id: 'kfl', n: 'Obchodní centrum', x: 5700, y: 5000, l: ['1', '333'], h: 'Hlavní nákupní zóna města s širokým výběrem služeb, podzemním parkovištěm a kavárnami pro odpočinek po nákupech.' },
+        { id: 'nam', n: 'Náměstí Svobody', x: 6200, y: 5000, l: ['1', '2', '333', 'TRN'], hub: true, h: 'Reprezentativní centrum města s historickou radnicí, fontánou a parkovou úpravou. Hlavní přestupní uzel s informačními tabulemi v reálném čase.' },
+        { id: 'nad', n: 'Hlavní nádraží', x: 6800, y: 5000, l: ['1', '2', '333', 'TRN'], hub: true, h: 'Plně zrekonstruovaný dopravní terminál. Nabízí pohodlné čekárny, bezplatné Wi-Fi připojení a přímé napojení na regionální i dálkové vlakové spoje.' },
+        { id: 'rit', n: 'Rezidence Řitka', x: 3500, y: 5000, l: ['333'], h: 'Poklidná rezidenční čtvrť obklopená zelení. Ideální místo pro rodinné bydlení s dobrou dostupností do centra města.' },
+        { id: 'prd', n: 'Prdelákovice - obec', x: 8000, y: 7000, l: ['333', 'TRN'], h: 'Tradiční obec s bohatým kulturním životem a malebnou návsí. Oblíbený cíl cykloturistů díky nově vybudovaným stezkám.' }
+    ],
+    routes: [
+        { id: '1', s: ['vzn','skl','kfl','nam','nad'], c: '#e74c3c', off: -12 },
+        { id: '2', s: ['nam','nad'], c: '#3498db', off: 0 },
+        { id: '333', s: ['rit','kfl','nam','nad','prd'], c: '#27ae60', off: 12 },
+        { id: 'trn', s: ['vzn','nam','nad','prd'], c: '#2c3e50', off: 0, trn: true }
+    ]
+};
+
+let scale = 0.6, posX = window.innerWidth/2 - 5800*scale, posY = window.innerHeight/2 - 5000*scale, isLock = false;
+const map = document.getElementById('map-content');
+
+function init() {
+    const svg = document.getElementById('svg');
+    DATA.routes.forEach(r => {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.classList.add('route'); if(r.trn) p.classList.add('trn-line');
+        p.setAttribute('stroke', r.c);
+        let d = "";
+        r.s.forEach((sid, i) => {
+            const s = DATA.stops.find(x => x.id === sid);
+            if(s) d += (i===0?'M':'L') + (s.x + r.off) + ' ' + (s.y + r.off);
+        });
+        p.setAttribute('d', d); svg.appendChild(p);
+    });
+    DATA.stops.forEach(s => {
+        const d = document.createElement('div');
+        d.className = 'stop' + (s.hub?' hub':'');
+        d.style.left = s.x + 'px'; d.style.top = s.y + 'px';
+        d.onclick = (e) => { e.stopPropagation(); show(s); };
+        const l = document.createElement('div');
+        l.className = 'label'; l.innerText = s.n;
+        l.style.left = s.x + 'px'; l.style.top = s.y + 'px';
+        document.getElementById('stops').appendChild(d);
+        document.getElementById('stops').appendChild(l);
+    });
+    update();
+}
+
+function toggleLock() { isLock = !isLock; document.getElementById('lock').innerText = isLock ? '🔒' : '🔓'; document.getElementById('lock').classList.toggle('active', isLock); }
+document.getElementById('zoom').oninput = function() { scale = parseFloat(this.value); update(); };
+
+let isD = false, sX, sY;
+const start = e => { if(isLock) return; isD = true; sX = (e.touches?e.touches[0].clientX:e.clientX) - posX; sY = (e.touches?e.touches[0].clientY:e.clientY) - posY; };
+const move = e => { if(!isD || isLock) return; posX = (e.touches?e.touches[0].clientX:e.clientX) - sX; posY = (e.touches?e.touches[0].clientY:e.clientY) - sY; update(); };
+window.addEventListener('mousedown', start); window.addEventListener('mousemove', move); window.addEventListener('mouseup', () => isD = false);
+window.addEventListener('touchstart', start); window.addEventListener('touchmove', move); window.addEventListener('touchend', () => isD = false);
+
+function update() { map.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+function recenter() { scale = 0.6; posX = window.innerWidth/2 - 5800*scale; posY = window.innerHeight/2 - 5000*scale; update(); document.getElementById('zoom').value = 0.6; }
+function show(s) {
+    document.getElementById('st-n').innerText = s.n;
+    document.getElementById('st-b').innerHTML = s.l.map(l => `<span class="line-tag" style="background:${getCol(l)}">${l}</span>`).join('');
+    document.getElementById('st-h').innerText = s.h;
+    document.getElementById('card').classList.add('active');
+}
+function getCol(l) { const r = DATA.routes.find(x => x.id === l); return r ? r.c : '#000'; }
+function closeInfo() { document.getElementById('card').classList.remove('active'); }
+init();
+</script>
+</body>
+</html>
