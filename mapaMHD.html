@@ -2,277 +2,269 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kokotice Maps v2.0 - Interaktivní Doprava</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KOKOTICE MOBILE MAPS</title>
     <style>
         :root {
-            --primary: #1a73e8;
-            --bg: #1e1e1e;
-            --sidebar: #252526;
-            --text: #e1e1e1;
-            --line1: #ff4757;
-            --line2: #2e86de;
-            --line3: #ffa502;
-            --lineN: #a4b0be;
-            --train: #747d8c;
-            --suburban: #2ed573;
+            --primary: #ffdd00;
+            --bg: #111;
+            --panel: #222;
+            --text: #eee;
+            --line1: #ff3e3e; /* Červená */
+            --line2: #3e8eff; /* Modrá */
+            --line3: #ffcc00; /* Žlutá */
+            --line333: #2ecc71; /* Zelená */
+            --train: #95a5a6; /* Šedá */
         }
 
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: 'Montserrat', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            overflow: hidden;
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: sans-serif; background: var(--bg); color: var(--text);
+            overflow: hidden; touch-action: none;
         }
 
-        /* --- UI ELEMENTS --- */
-        #top-bar {
-            position: absolute; top: 15px; left: 15px; z-index: 100;
-            display: flex; gap: 10px;
+        /* --- HLAVNÍ KONTEJNER --- */
+        #map-viewport {
+            width: 100vw; height: 100vh;
+            position: relative; overflow: hidden;
+            cursor: grab;
         }
 
-        .glass-panel {
-            background: rgba(37, 37, 38, 0.85);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        }
-
-        .search-container {
-            padding: 10px 20px; display: flex; align-items: center; min-width: 350px;
-        }
-
-        input {
-            background: transparent; border: none; color: white;
-            font-size: 16px; width: 100%; outline: none;
-        }
-
-        #side-panel {
-            position: absolute; left: 15px; top: 80px; bottom: 15px;
-            width: 350px; z-index: 90; padding: 20px;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            overflow-y: auto;
-        }
-
-        .departure-card {
-            background: rgba(255,255,255,0.05);
-            padding: 12px; border-radius: 8px; margin-bottom: 10px;
-            border-left: 5px solid var(--primary);
-        }
-
-        /* --- MAP CORE --- */
-        #viewport {
-            width: 100vw; height: 100vh; cursor: crosshair;
-            overflow: hidden; position: relative;
-        }
-
-        #map-canvas {
-            position: absolute; width: 10000px; height: 10000px;
-            transform-origin: 0 0;
+        #map-content {
+            position: absolute;
+            width: 5000px; height: 5000px;
+            background-color: #1a1a1a;
             background-image: 
-                radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            background-color: #121212;
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 100px 100px;
+            transform-origin: 0 0;
         }
 
-        /* --- GRAPHICS --- */
-        svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        .route-path {
-            fill: none; stroke-width: 10; stroke-linecap: round;
-            stroke-linejoin: round; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        /* --- TRASY (SVG) --- */
+        svg {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 5;
         }
+        .route {
+            fill: none; stroke-width: 12; 
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+        .train { stroke-dasharray: 20, 15; stroke-width: 10; }
 
-        .train-path { stroke-dasharray: 20, 15; stroke-width: 12; }
-
-        .stop-point {
-            position: absolute; width: 18px; height: 18px;
-            background: white; border: 4px solid #333;
+        /* --- ZASTÁVKY --- */
+        .stop {
+            position: absolute; width: 24px; height: 24px;
+            background: white; border: 5px solid #000;
             border-radius: 50%; transform: translate(-50%, -50%);
-            cursor: pointer; z-index: 50; transition: all 0.2s;
+            z-index: 10; pointer-events: auto;
+        }
+        .stop.hub { width: 35px; height: 35px; border-color: var(--primary); }
+        
+        .label {
+            position: absolute; font-size: 14px; font-weight: bold;
+            color: white; text-shadow: 2px 2px 4px #000;
+            white-space: nowrap; transform: translate(-50%, 20px);
+            pointer-events: none; z-index: 11;
         }
 
-        .stop-point:hover {
-            transform: translate(-50%, -50%) scale(1.5);
-            background: var(--primary); box-shadow: 0 0 15px var(--primary);
+        /* --- MOBILNÍ GUI --- */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
         }
 
-        .stop-label {
-            position: absolute; font-size: 11px; font-weight: bold;
-            color: #aaa; white-space: nowrap; pointer-events: none;
-            margin-top: 15px; transform: translateX(-50%);
-            text-shadow: 1px 1px 2px black;
+        .header {
+            pointer-events: auto; background: rgba(0,0,0,0.8);
+            padding: 15px; border-bottom: 2px solid var(--primary);
+            text-align: center;
         }
 
-        .region-label {
-            position: absolute; font-size: 40px; font-weight: 700;
-            color: rgba(255,255,255,0.03); text-transform: uppercase;
-            pointer-events: none; letter-spacing: 10px;
+        #info-card {
+            position: absolute; bottom: -100%; left: 0; width: 100%;
+            background: var(--panel); border-radius: 20px 20px 0 0;
+            padding: 20px; box-sizing: border-box;
+            transition: bottom 0.4s ease; pointer-events: auto;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        #info-card.active { bottom: 0; }
+
+        .btn-close { float: right; padding: 10px; color: var(--primary); font-weight: bold; }
+
+        .controls {
+            position: absolute; right: 15px; top: 50%;
+            transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn {
+            pointer-events: auto; width: 50px; height: 50px;
+            background: var(--panel); border: 1px solid #444;
+            color: white; border-radius: 10px; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- CONTROLS --- */
-        .map-controls {
-            position: absolute; right: 20px; bottom: 20px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .ctrl-btn {
-            width: 50px; height: 50px; display: flex; align-items: center;
-            justify-content: center; font-size: 24px; cursor: pointer;
-            color: white; border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .badge {
-            padding: 2px 6px; border-radius: 4px; font-size: 10px;
-            font-family: 'Roboto Mono', monospace; margin-right: 5px;
+        .village-label {
+            position: absolute; font-size: 60px; color: rgba(255,255,255,0.05);
+            font-weight: 900; pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-<div id="top-bar">
-    <div class="glass-panel search-container">
-        <input type="text" placeholder="Kam to dneska bude, šéfe?">
+<div id="ui-layer">
+    <div class="header">
+        <strong>KOKOTICE MAPS v3.0</strong>
+    </div>
+
+    <div class="controls">
+        <div class="btn" onclick="zoom(1.2)">+</div>
+        <div class="btn" onclick="zoom(0.8)">−</div>
+        <div class="btn" onclick="recenter()">⌂</div>
+    </div>
+
+    <div id="info-card">
+        <div class="btn-close" onclick="closeInfo()">ZAVŘÍT</div>
+        <h2 id="st-name">Název zastávky</h2>
+        <p id="st-lines"></p>
+        <p id="st-desc" style="color: #bbb;"></p>
+        <div id="st-departures" style="margin-top: 10px; border-top: 1px solid #444; padding-top: 10px;">
+            <small>Příští spoj: <strong>Za 3 minuty</strong></small>
+        </div>
     </div>
 </div>
 
-<div id="side-panel" class="glass-panel">
-    <h2 id="panel-title">MHD Kokotice - Přehled</h2>
-    <p style="font-size: 12px; color: #888;">Klikni na zastávku pro živé odjezdy.</p>
-    <hr style="opacity: 0.1;">
-    <div id="departures">
-        <div class="departure-card">
-            <strong>Linka 1</strong> - Směr Vozovna<br>
-            <small>Za 2 minuty (Zpoždění: Hodně)</small>
-        </div>
-        <div class="departure-card" style="border-left-color: var(--line3);">
-            <strong>Linka 3</strong> - Směr Univerzita<br>
-            <small>Za 5 minut (jede načerno)</small>
-        </div>
-    </div>
-</div>
+<div id="map-viewport">
+    <div id="map-content">
+        <div class="village-label" style="top: 2200px; left: 1800px;">SMRADLAVÝ ÚJEZDEC</div>
+        <div class="village-label" style="top: 2500px; left: 2400px;">CENTRUM</div>
+        <div class="village-label" style="top: 2800px; left: 3200px;">KOKOTSKÝ ÚJEZDEC</div>
 
-<div class="map-controls">
-    <div class="glass-panel ctrl-btn" onclick="adjustZoom(1.2)">+</div>
-    <div class="glass-panel ctrl-btn" onclick="adjustZoom(0.8)">−</div>
-    <div class="glass-panel ctrl-btn" onclick="resetCam()">⌂</div>
-</div>
-
-<div id="viewport">
-    <div id="map-canvas">
-        <div class="region-label" style="top: 4800px; left: 4500px;">CENTRUM</div>
-        <div class="region-label" style="top: 2000px; left: 2000px;">SEVERNÍ DIVOČINA</div>
-        <div class="region-label" style="top: 7000px; left: 7000px;">REGION PRDELÁKOVICE</div>
-
-        <svg id="svg-layer">
-            <path id="path-train" class="route-path train-path" stroke="var(--train)" />
-            <path id="path-1" class="route-path" stroke="var(--line1)" />
-            <path id="path-2" class="route-path" stroke="var(--line2)" />
-            <path id="path-3" class="route-path" stroke="var(--line3)" />
-            <path id="path-333" class="route-path" stroke="var(--suburban)" stroke-width="6" />
+        <svg>
+            <path id="p-train" class="route train" stroke="var(--train)"></path>
+            <path id="p-1" class="route" stroke="var(--line1)"></path>
+            <path id="p-2" class="route" stroke="var(--line2)"></path>
+            <path id="p-3" class="route" stroke="var(--line3)"></path>
+            <path id="p-333" class="route" stroke="var(--line333)"></path>
         </svg>
 
-        <div id="stops-layer"></div>
+        <div id="stops-container"></div>
     </div>
 </div>
 
 <script>
-    const DATA = {
+    const CONFIG = {
         stops: [
-            // MĚSTO KOKOTICE
-            { id: 'vzn', name: 'VOZOVNA (Konec světa)', x: 4000, y: 5000, lines: ['1'], desc: 'Tady končí sny a začínají šichty.' },
-            { id: 'skl', name: 'ŠKOLA (Ústav pro přežití)', x: 4300, y: 5000, lines: ['1'], desc: 'Vysoká škola života.' },
-            { id: 'kfl', name: 'KAUFLAND (Aréna o slevy)', x: 4600, y: 5000, lines: ['1', '333'], desc: 'Pozor na důchodce s košíky.' },
-            { id: 'nam', name: 'NÁMĚSTÍ OSVOBOZENÍ', x: 5000, y: 5000, lines: ['1', '2', '3'], hub: true, desc: 'Tady se kříží osudy i linky 1 a 2.' },
-            { id: 'nad', name: 'NÁDRAŽÍ ČD (Smradlavá hala)', x: 5400, y: 5000, lines: ['1', '2', 'TRN', '333'], hub: true, desc: 'Pach dobrodružství a levných baget.' },
-            { id: 'pru', name: 'PRŮMYSLOVÁ ZÓNA (Lidská masomlejnka)', x: 5800, y: 5000, lines: ['1'], desc: 'Práce šlechtí, ale tady tě zabije.' },
+            // CENTRUM A LINKA 1
+            { id: 'vzn', n: 'VOZOVNA', x: 2000, y: 2500, l: ['1'], d: 'Tady se budí autobusy. Smrdí to tu naftou.' },
+            { id: 'skl', n: 'ŠKOLA', x: 2200, y: 2500, l: ['1'], d: 'Děti tu pláčou, revizoři se smějí.' },
+            { id: 'kfl', n: 'KAUFLAND', x: 2400, y: 2500, l: ['1', '333'], d: 'Bitva o zlevněné máslo začíná v 7:00.' },
+            { id: 'nam', n: 'NÁMĚSTÍ OSVOBOZENÍ', x: 2700, y: 2500, l: ['1', '2', '3'], hub: true, d: 'Srdce Kokotic. Tady se kříží 1 a 2.' },
+            { id: 'nad', n: 'NÁDRAŽÍ ČD', x: 3000, y: 2500, l: ['1', '2', 'TRAIN', '333'], hub: true, d: 'Přestup na vlaky směr Prdelákovice.' },
+            { id: 'pru', n: 'PRŮMYSLOVÁ ZÓNA', x: 3300, y: 2500, l: ['1'], d: 'Tady lidi mění čas za peníze.' },
             
-            // LINKA 2 a 3
-            { id: 'zam', name: 'ZÁMECKÝ PARK (Místo pro rande)', x: 5000, y: 4600, lines: ['2'], desc: 'Páry v křoví nejsou součástí MHD.' },
-            { id: 'nak', name: 'NÁKUPNÍ ZÓNA (Utrácení peněz)', x: 5000, y: 5400, lines: ['2', '333'], desc: 'Místo, kde tvá výplata zmizí.' },
-            { id: 'sid', name: 'Duhové Sídliště (Marnost)', x: 4600, y: 4600, lines: ['3'], desc: 'Betonová džungle s linkou 3.' },
-            { id: 'uni', name: 'Technická Univerzita', x: 5400, y: 5400, lines: ['3'], desc: 'Místo pro budoucí nezaměstnané.' },
+            // LINKA 2 (Modrá)
+            { id: 'zam', n: 'ZÁMECKÝ PARK', x: 2700, y: 2200, l: ['2'], d: 'Pozor na labutě, jsou agresivní.' },
+            { id: 'nak', n: 'NÁKUPNÍ CENTRUM JIH', x: 2700, y: 2800, l: ['2', '333'], d: 'Utrácejte, dokud máte.' },
 
-            // REGION
-            { id: 'lht', name: 'Vlhká Lhota', x: 3000, y: 4000, lines: ['333'], desc: 'Vždycky tu prší.' },
-            { id: 'hrd', name: 'Hrdlořezy', x: 6500, y: 3000, lines: ['333'], desc: 'Zastavuj jen se zamčenými dveřmi.' },
-            { id: 'prd', name: 'Prdelákovice', x: 8000, y: 8000, lines: ['TRN'], desc: 'Tady končí signál i naděje.' },
-            { id: 'brd', name: 'Daleký Brod', x: 7000, y: 5000, lines: ['TRN'], desc: 'Rychlíky tu jen projíždějí.' }
+            // LINKA 3 (Žlutá)
+            { id: 'sid', n: 'SÍDLIŠTĚ MARNOST', x: 2500, y: 2300, l: ['1','3'], d: 'Tady se kříží 1 a 3. Šedé domy, šedé sny.' },
+            { id: 'uni', n: 'UNIVERZITA', x: 3000, y: 2800, l: ['3'], d: 'Vědomosti jsou síla, ale pivo je pivo.' },
+
+            // REGION A VLAKY
+            { id: 'uje_s', n: 'SMRADLAVÝ ÚJEZDEC', x: 1500, y: 2500, l: ['333'], d: 'Název mluví za vše.' },
+            { id: 'uje_k', n: 'KOKOTSKÝ ÚJEZDEC', x: 3500, y: 3500, l: ['333'], d: 'Daleký venkov.' },
+            { id: 'prd', n: 'PRDELÁKOVICE', x: 4500, y: 4500, l: ['TRAIN'], d: 'Tady lišky dávají dobrou noc.' }
         ],
         routes: [
-            { id: '1', path: ['vzn', 'skl', 'kfl', 'nam', 'nad', 'pru'] },
-            { id: '2', path: ['zam', 'nam', 'nad', 'nak'] },
-            { id: '3', path: ['sid', 'nam', 'uni'] },
-            { id: '333', path: ['lht', 'kfl', 'nam', 'nad', 'nak', 'hrd'] },
-            { id: 'train', path: ['vzn', 'nam', 'nad', 'brd', 'prd'] }
+            { id: '1', s: ['vzn','skl','sid','kfl','nam','nad','pru'] },
+            { id: '2', s: ['zam','nam','nad','nak'] },
+            { id: '3', s: ['sid','nam','uni'] },
+            { id: '333', s: ['uje_s','kfl','nam','nad','nak','uje_k'] },
+            { id: 'train', s: ['vzn','nam','nad','prd'] }
         ]
     };
 
-    let scale = 1, posX = -4500, posY = -4500;
-    const canvas = document.getElementById('map-canvas');
-    const viewport = document.getElementById('viewport');
+    let scale = 0.6;
+    let posX = window.innerWidth/2 - 2700*scale;
+    let posY = window.innerHeight/2 - 2500*scale;
+    const content = document.getElementById('map-content');
 
     function init() {
-        const stopLayer = document.getElementById('stops-layer');
-        DATA.stops.forEach(s => {
-            const el = document.createElement('div');
-            el.className = 'stop-point';
-            if(s.hub) el.style.width = '24px', el.style.height = '24px';
-            el.style.left = s.x + 'px'; el.style.top = s.y + 'px';
-            el.onclick = () => showStop(s);
+        const container = document.getElementById('stops-container');
+        CONFIG.stops.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'stop' + (s.hub ? ' hub' : '');
+            div.style.left = s.x + 'px'; div.style.top = s.y + 'px';
+            div.onclick = () => showInfo(s);
             
-            const label = document.createElement('div');
-            label.className = 'stop-label';
-            label.innerText = s.name;
-            label.style.left = s.x + 'px'; label.style.top = s.y + 'px';
+            const lbl = document.createElement('div');
+            lbl.className = 'label';
+            lbl.innerText = s.n;
+            lbl.style.left = s.x + 'px'; lbl.style.top = s.y + 'px';
             
-            stopLayer.appendChild(el);
-            stopLayer.appendChild(label);
+            container.appendChild(div);
+            container.appendChild(lbl);
         });
 
-        DATA.routes.forEach(r => {
-            const p = document.getElementById('path-' + r.id);
+        CONFIG.routes.forEach(r => {
+            const path = document.getElementById('p-' + r.id);
             let d = "";
-            r.path.forEach((sid, i) => {
-                const s = DATA.stops.find(x => x.id === sid);
-                d += (i===0?'M':'L') + s.x + ' ' + s.y;
+            r.s.forEach((sid, i) => {
+                const stop = CONFIG.stops.find(x => x.id === sid);
+                d += (i===0?'M':'L') + stop.x + ' ' + stop.y;
             });
-            p.setAttribute('d', d);
+            path.setAttribute('d', d);
         });
         update();
     }
 
-    function showStop(s) {
-        document.getElementById('panel-title').innerText = s.name;
-        document.getElementById('departures').innerHTML = `
-            <p>${s.desc}</p>
-            <div class="departure-card"><strong>Linky:</strong> ${s.lines.join(', ')}</div>
-            <div class="departure-card"><strong>Příští spoj:</strong> Za ${Math.floor(Math.random()*15)} min</div>
-        `;
-    }
+    // --- OVLÁDÁNÍ ---
+    let isDragging = false;
+    let lastX, lastY;
 
-    // INTERACTION
-    let dragging = false, lastX, lastY;
-    viewport.onmousedown = e => { dragging = true; lastX = e.clientX; lastY = e.clientY; };
-    window.onmousemove = e => {
-        if(!dragging) return;
-        posX += (e.clientX - lastX); posY += (e.clientY - lastY);
-        lastX = e.clientX; lastY = e.clientY;
+    // Podpora pro Myš i Dotyk
+    const start = e => {
+        isDragging = true;
+        lastX = e.touches ? e.touches[0].clientX : e.clientX;
+        lastY = e.touches ? e.touches[0].clientY : e.clientY;
+    };
+    const move = e => {
+        if(!isDragging) return;
+        const curX = e.touches ? e.touches[0].clientX : e.clientX;
+        const curY = e.touches ? e.touches[0].clientY : e.clientY;
+        posX += (curX - lastX);
+        posY += (curY - lastY);
+        lastX = curX; lastY = curY;
         update();
     };
-    window.onmouseup = () => dragging = false;
-    viewport.onwheel = e => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        adjustZoom(delta);
-    };
+    const stop = () => isDragging = false;
 
-    function adjustZoom(d) { scale *= d; scale = Math.min(Math.max(0.1, scale), 3); update(); }
-    function resetCam() { scale = 1; posX = -4500; posY = -4500; update(); }
-    function update() { canvas.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`; }
+    window.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', stop);
+    window.addEventListener('touchstart', start);
+    window.addEventListener('touchmove', move);
+    window.addEventListener('touchend', stop);
+
+    function update() {
+        content.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
+    }
+
+    function zoom(f) { scale *= f; update(); }
+    function recenter() { 
+        scale = 0.6; 
+        posX = window.innerWidth/2 - 2700*scale; 
+        posY = window.innerHeight/2 - 2500*scale; 
+        update(); 
+    }
+
+    function showInfo(s) {
+        document.getElementById('st-name').innerText = s.n;
+        document.getElementById('st-lines').innerHTML = s.l.map(line => `<span style="background:var(--line${line}); padding:3px 8px; border-radius:5px; color:black; font-weight:bold; margin-right:5px;">${line}</span>`).join('');
+        document.getElementById('st-desc').innerText = s.d;
+        document.getElementById('info-card').classList.add('active');
+    }
+    function closeInfo() { document.getElementById('info-card').classList.remove('active'); }
 
     init();
 </script>
