@@ -3,318 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informační systém dopravy</title>
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #e74c3c;
-            --bg: #f8f9fa;
-            --text: #333;
-            --l1: #2ecc71;  /* Zelená */
-            --l2: #e74c3c;  /* Červená */
-            --l12: #3498db; /* Modrá */
-            --l13: #000000; /* Černá */
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-            margin: 0;
-            display: flex;
-            background-color: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 260px;
-            background-color: var(--primary);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            overflow-y: auto;
-            z-index: 100;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            background: rgba(0,0,0,0.2);
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .nav-group { padding: 10px 0; }
-        
-        .nav-label {
-            padding: 10px 20px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--accent);
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .nav-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            color: #ecf0f1;
-            transition: 0.2s;
-            display: block;
-            text-decoration: none;
-            border-left: 4px solid transparent;
-        }
-
-        .nav-item:hover { background: rgba(255,255,255,0.1); }
-        .nav-item.active {
-            background: rgba(255,255,255,0.1);
-            border-left: 4px solid var(--accent);
-            font-weight: bold;
-        }
-
-        .main-content {
-            margin-left: 260px;
-            padding: 40px;
-            width: calc(100% - 260px);
-        }
-
-        .page { display: none; animation: fadeIn 0.3s; }
-        .page.active { display: block; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        h1 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
-        
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
-        }
-
-        .vehicle-img {
-            width: 100%;
-            max-height: 250px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            background-color: #ddd;
-        }
-
-        .fleet-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-            gap: 5px;
-            margin-top: 10px;
-        }
-
-        .v-badge {
-            background: #f1f1f1;
-            padding: 6px;
-            text-align: center;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            font-weight: bold;
-            font-size: 0.8rem;
-        }
-
-        .map-container {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            text-align: center;
-            overflow-x: auto;
-        }
-
-        .route-path { fill: none; stroke-width: 6; stroke-linecap: round; }
-        .station-dot { fill: white; stroke: #333; stroke-width: 2; }
-        .station-label { font-size: 10px; font-weight: bold; fill: #2c3e50; }
-        .terminus-label { font-size: 12px; font-weight: 800; fill: #e74c3c; }
-
-        .legend {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .legend-item { display: flex; align-items: center; font-size: 0.9rem; }
-        .color-box { width: 16px; height: 16px; margin-right: 10px; border-radius: 3px; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: relative; }
-            .main-content { margin-left: 0; padding: 20px; width: 100%; }
-        }
-    </style>
+    <title>Město Kokotice - Oficiální stránky</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="sidebar-header">DOPRAVNÍ SYSTÉM</div>
-    <div class="nav-group">
-        <a href="#" class="nav-item active" onclick="showPage('home', this)">🏠 Domů</a>
-        <a href="#" class="nav-item" onclick="showPage('mapa', this)">🗺️ Mapa linek</a>
-    </div>
-    <div class="nav-label">Vozový park</div>
-    <div class="nav-group">
-        <a href="#" class="nav-item" onclick="showPage('sor', this)">Autobusy SOR</a>
-        <a href="#" class="nav-item" onclick="showPage('iveco', this)">Iveco</a>
-        <a href="#" class="nav-item" onclick="showPage('irisbus', this)">Irisbus</a>
-        <a href="#" class="nav-item" onclick="showPage('karosa', this)">Karosa</a>
-        <a href="#" class="nav-item" onclick="showPage('trolejbusy', this)">Trolejbusy</a>
-        <a href="#" class="nav-item" onclick="showPage('skola', this)">Školní vozy</a>
-    </div>
-</div>
-
-<div class="main-content">
-    
-    <div id="home" class="page active">
-        <h1>Informační systém</h1>
-        <div class="card">
-            <p>Vítejte v systému pro správu dopravy. Mapa byla aktualizována o všechny zastávky a označení konečných stanic.</p>
+    <header>
+        <div class="container">
+            <h1>Vítejte v Kokoticích</h1>
+            <p>Město s tradicí, srdcem a moderní dopravou</p>
         </div>
-    </div>
+    </header>
 
-    <!-- MAPA -->
-    <div id="mapa" class="page">
-        <h1>Mapa dopravní sítě</h1>
-        <div class="card">
-            <div class="map-container">
-                <svg viewBox="0 0 700 450" xmlns="http://www.w3.org/2000/svg">
-                    <!-- TRASY -->
-                    <!-- Linka 1 & 12: ZŠ -> Poliklinika -> ÚAN -->
-                    <path class="route-path" d="M100,100 L200,150 L300,300" stroke="var(--l12)" />
-                    <path class="route-path" d="M100,100 L200,150 L300,300" stroke="var(--l1)" stroke-dasharray="10,10" />
+    <nav>
+        <ul>
+            <li><a href="#">Domů</a></li>
+            <li><a href="https://milovnikmhd1234.github.io/KokosiceWeb/MapaMHD" target="_blank">Mapa MHD</a></li>
+            <li><a href="https://milovnikmhd1234.github.io/KokosiceWeb/vozyMHD" target="_blank">Vozový park</a></li>
+            <li><a href="#">O městě</a></li>
+            <li><a href="#">Kontakt</a></li>
+        </ul>
+    </nav>
 
-                    <!-- Linka 2 & 13: ÚAN -> Sídliště -> Hl. Nádraží -->
-                    <path class="route-path" d="M300,300 L400,300 L550,300" stroke="var(--l2)" />
-                    <path class="route-path" d="M300,300 L400,300 L550,300" stroke="var(--l13)" stroke-dasharray="10,10" />
+    <main class="container">
+        <section class="intro">
+            <h2>O našem městě</h2>
+            <p>Kokotice jsou dynamicky se rozvíjející fiktivní metropole, která klade důraz na ekologii a efektivní veřejnou dopravu. Naše síť MHD patří k nejmodernějším v regionu.</p>
+        </section>
 
-                    <!-- Linka 1: ÚAN -> Divadlo -> Depo TR -->
-                    <path class="route-path" d="M300,300 L450,200 L550,100" stroke="var(--l1)" />
-                    
-                    <!-- Linka 2: Hl. Nádraží -> Obchodní centrum -> Depo TR -->
-                    <path class="route-path" d="M550,300 L620,200 L550,100" stroke="var(--l2)" />
-                    
-                    <!-- Linka 12: ÚAN -> Park -> ZŠ -->
-                    <path class="route-path" d="M300,300 L150,350 L100,100" stroke="var(--l12)" />
-
-                    <!-- ZASTÁVKY A KONEČNÉ -->
-                    <!-- ZŠ -->
-                    <circle class="station-dot" cx="100" cy="100" r="6" />
-                    <text class="station-label" x="60" y="90">Základní škola</text>
-                    <text class="terminus-label" x="40" y="115">[Konec: 1, 12]</text>
-
-                    <!-- Poliklinika -->
-                    <circle class="station-dot" cx="200" cy="150" r="4" />
-                    <text class="station-label" x="210" y="155">Poliklinika</text>
-
-                    <!-- ÚAN -->
-                    <circle class="station-dot" cx="300" cy="300" r="6" />
-                    <text class="station-label" x="270" y="285">ÚAN</text>
-                    <text class="terminus-label" x="260" y="335">[Konec: 2, 13]</text>
-
-                    <!-- Divadlo -->
-                    <circle class="station-dot" cx="450" cy="200" r="4" />
-                    <text class="station-label" x="460" y="205">Divadlo</text>
-
-                    <!-- Sídliště -->
-                    <circle class="station-dot" cx="400" cy="300" r="4" />
-                    <text class="station-label" x="385" y="320">Sídliště</text>
-
-                    <!-- Hl. Nádraží -->
-                    <circle class="station-dot" cx="550" cy="300" r="6" />
-                    <text class="station-label" x="540" y="325">Hl. Nádraží</text>
-                    <text class="terminus-label" x="540" y="345">[Konec: 13]</text>
-
-                    <!-- Obchodní centrum -->
-                    <circle class="station-dot" cx="620" cy="200" r="4" />
-                    <text class="station-label" x="630" y="205">OC Střed</text>
-
-                    <!-- Depo TR -->
-                    <circle class="station-dot" cx="550" cy="100" r="6" />
-                    <text class="station-label" x="540" y="80">Depo Trolejbusů</text>
-                    <text class="terminus-label" x="540" y="125">[Konec: 1, 2]</text>
-
-                    <!-- Park -->
-                    <circle class="station-dot" cx="150" cy="350" r="4" />
-                    <text class="station-label" x="140" y="375">Městský park</text>
-                </svg>
+        <section class="mhd-info">
+            <div class="card">
+                <h3>🗺️ Síť linek</h3>
+                <p>Naše propracovaná síť vás doveze do každého koutu města. Podívejte se na aktuální plány.</p>
+                <a href="https://milovnikmhd1234.github.io/KokosiceWeb/MapaMHD" class="button">Zobrazit Mapu MHD</a>
             </div>
-            
-            <div class="legend">
-                <div class="legend-item"><div class="color-box" style="background: var(--l1)"></div> Linka 1 (Zelená)</div>
-                <div class="legend-item"><div class="color-box" style="background: var(--l2)"></div> Linka 2 (Červená)</div>
-                <div class="legend-item"><div class="color-box" style="background: var(--l12)"></div> Linka 12 (Modrá)</div>
-                <div class="legend-item"><div class="color-box" style="background: var(--l13)"></div> Linka 13 (Černá)</div>
+
+            <div class="card">
+                <h3>🚌 Naše vozy</h3>
+                <p>Provozujeme moderní nízkopodlažní autobusy a tramvaje s klimatizací a Wi-Fi připojením.</p>
+                <a href="https://milovnikmhd1234.github.io/KokosiceWeb/vozyMHD" class="button">Prohlédnout vozy</a>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- OSTATNÍ SEKCE ZŮSTÁVAJÍ STEJNÉ -->
-    <div id="sor" class="page">
-        <h1>Autobusy SOR</h1>
-        <div class="card"><div class="fleet-grid" id="grid-sor"></div></div>
-    </div>
-    <div id="iveco" class="page">
-        <h1>Iveco</h1>
-        <div class="card"><div class="fleet-grid" id="grid-iveco"></div></div>
-    </div>
-    <div id="irisbus" class="page">
-        <h1>Irisbus</h1>
-        <div class="card"><div class="fleet-grid" id="grid-irisbus"></div></div>
-    </div>
-    <div id="karosa" class="page">
-        <h1>Karosa</h1>
-        <div class="card"><div class="fleet-grid" id="grid-karosa"></div></div>
-    </div>
-    <div id="trolejbusy" class="page">
-        <h1>Trolejbusy</h1>
-        <div class="card"><h3>SOR TNB 12</h3><div class="fleet-grid" id="grid-tnb"></div></div>
-        <div class="card"><h3>Škoda 26 Tr</h3><div class="fleet-grid" id="grid-skoda"></div></div>
-    </div>
-    <div id="skola" class="page">
-        <h1>Školní vozy</h1>
-        <div class="card"><div class="fleet-grid" id="grid-skola"></div></div>
-    </div>
+        <section class="news">
+            <h2>Aktuality z radnice</h2>
+            <ul>
+                <li><strong>15. 5. 2024</strong> - Otevíráme novou cyklostezku podél Kokotického potoka.</li>
+                <li><strong>10. 5. 2024</strong> - Posílení ranních spojů linky č. 1 směrem do centra.</li>
+                <li><strong>1. 5. 2024</strong> - Slavnostní zahájení letní sezóny v městském parku.</li>
+            </ul>
+        </section>
+    </main>
 
-</div>
-
-<script>
-    function showPage(pageId, element) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-        element.classList.add('active');
-        window.scrollTo(0,0);
-    }
-
-    function generateNumbers(containerId, start, end) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        for (let i = start; i <= end; i++) {
-            const badge = document.createElement('div');
-            badge.className = 'v-badge';
-            badge.innerText = i < 100 ? i.toString().padStart(3, '0') : i;
-            container.appendChild(badge);
-        }
-    }
-
-    window.onload = function() {
-        generateNumbers('grid-sor', 1, 10);
-        generateNumbers('grid-iveco', 11, 20);
-        generateNumbers('grid-irisbus', 21, 25);
-        generateNumbers('grid-karosa', 26, 35);
-        generateNumbers('grid-tnb', 50, 59);
-        generateNumbers('grid-skoda', 66, 70);
-        generateNumbers('grid-skola', 9917, 9919);
-    };
-</script>
+    <footer>
+        <p>&copy; 2024 Městský úřad Kokotice. Všechna práva vyhrazena.</p>
+    </footer>
 
 </body>
 </html>
